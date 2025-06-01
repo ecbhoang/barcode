@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        background: #0f172a;
+        overflow: hidden;
+        font-family: sans-serif;
+      }
+
+      #reader {
+        height: 100vh;
+        width: 100vw;
+      }
+
+      #toast {
+        transition: opacity 0.3s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Fullscreen Scanner -->
+    <div id="reader"></div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="hidden fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-full shadow-lg text-sm z-50"
+    >
+      Copied
+    </div>
+
+    <!-- Continue Button -->
+    <button
+      id="continue-btn"
+      class="hidden fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-md hover:bg-blue-500 z-50"
+    >
+      Continue
+    </button>
+
+    <script>
+      let scanner;
+
+      const toast = document.getElementById("toast");
+      const continueBtn = document.getElementById("continue-btn");
+
+      function showToast() {
+        toast.classList.remove("hidden");
+        setTimeout(() => {
+          toast.classList.add("hidden");
+        }, 1500);
+      }
+
+      function onScanSuccess(decodedText) {
+        scanner.pause();
+
+        navigator.clipboard
+          .writeText(decodedText)
+          .then(() => showToast())
+          .catch((err) => console.error("Copy failed:", err));
+
+        continueBtn.classList.remove("hidden");
+      }
+
+      function startScanner() {
+        scanner = new Html5Qrcode("reader");
+
+        scanner
+          .start(
+            { facingMode: "environment" },
+            {
+              fps: 10,
+              qrbox: (vw, vh) => {
+                const size = Math.min(vw * 0.8, 300);
+                return { width: size, height: size };
+              },
+              aspectRatio: 1.777,
+            },
+            onScanSuccess
+          )
+          .catch((err) => {
+            console.error("Camera start error:", err);
+          });
+      }
+
+      continueBtn.onclick = () => {
+        scanner.resume();
+        continueBtn.classList.add("hidden");
+      };
+
+      startScanner();
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js").then(() => {
+          console.log("✅ Service Worker registered");
+        });
+      }
+    </script>
+  </body>
+</html>
