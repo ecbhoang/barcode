@@ -8,7 +8,6 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#0f172a" />
-
     <style>
       html,
       body {
@@ -65,14 +64,17 @@
       }
 
       function onScanSuccess(decodedText) {
-        scanner.pause();
+        scanner
+          .stop()
+          .then(() => {
+            navigator.clipboard
+              .writeText(decodedText)
+              .then(() => showToast())
+              .catch((err) => console.error("Copy failed:", err));
 
-        navigator.clipboard
-          .writeText(decodedText)
-          .then(() => showToast())
-          .catch((err) => console.error("Copy failed:", err));
-
-        continueBtn.classList.remove("hidden");
+            continueBtn.classList.remove("hidden");
+          })
+          .catch((err) => console.error("Failed to stop camera:", err));
       }
 
       function startScanner() {
@@ -83,11 +85,7 @@
             { facingMode: "environment" },
             {
               fps: 10,
-              qrbox: (vw, vh) => {
-                const size = Math.min(vw * 0.8, 300);
-                return { width: size, height: size };
-              },
-              aspectRatio: 1.777,
+              aspectRatio: 1.777, // 16:9, optional
             },
             onScanSuccess
           )
@@ -97,18 +95,11 @@
       }
 
       continueBtn.onclick = () => {
-        scanner.resume();
         continueBtn.classList.add("hidden");
+        startScanner();
       };
 
       startScanner();
-    </script>
-    <script>
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js").then(() => {
-          console.log("✅ Service Worker registered");
-        });
-      }
     </script>
   </body>
 </html>
